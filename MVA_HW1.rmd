@@ -1,0 +1,37 @@
+---
+title: " MVA_KM_HW1"
+author: "Kireeti Mantrala"
+netid: "sm2594@scarletmail.rutgers.edu"
+date: "2/6/2023"
+output: html_document
+---
+  
+```{r}
+library(readr)
+Bumpus_sparrows <- read_csv("~/Downloads/Bumpus_sparrows.csv")
+spa <- Bumpus_sparrows
+spa
+spa <- as.data.frame(spa)
+## Data set shows the sparrows which have survived and not survived.
+#Column Means
+colMeans(subset(spa, Survivorship == "NS")[,c("Total_length","Alar_extent","L_beak_head","L_humerous","L_keel_sternum")])
+##The result shows us the total length, Alar_extent , L_beak_head, L_humerous and L_keel_sternum for the not survived sparrows.
+colMeans(subset(spa, Survivorship == "S")[,c("Total_length","Alar_extent","L_beak_head","L_humerous","L_keel_sternum")])
+##The result shows us the total length, Alar_extent , L_beak_head, L_humerous and L_keel_sternum for the survived sparrows.
+#Correlation
+cor(subset(spa, Survivorship == "NS")[,c("Total_length","Alar_extent","L_beak_head","L_humerous","L_keel_sternum")])
+##We have drawn the correlation on the sparrows that did not survive. For each of these variables have a value of 1 which is dependent to another variable and it has a lowest value between L_keel_sternum and L_beak_head of 0.5698.
+
+cor(subset(spa, Survivorship == "S")[,c("Total_length","Alar_extent","L_beak_head","L_humerous","L_keel_sternum")])
+##We have drawn the correlation on the sparrows that survived. For each of these variables have a value of 1 which is dependent to another variable and it has a lowest value between L_keel_sternum and Alar_extent of 0.2774.
+
+#Covariance
+cov(subset(spa, Survivorship == "NS")[,c("Total_length","Alar_extent","L_beak_head","L_humerous","L_keel_sternum")])
+##We derived the covariance for the sparrows which did not survive.The largest value lie between Alar_extent and is 32.55 also, it has lowest value lying between L_humerous of 0.4344.
+cov(subset(spa, Survivorship == "S")[,c("Total_length","Alar_extent","L_beak_head","L_humerous","L_keel_sternum")])
+##We derived the covariance for the sparrows which survived.The largest value lie between Total_length and is 11.04 also, it has lowest value lying between L_humerous and _keel_sternum of 0.1325.
+```
+
+
+
+
