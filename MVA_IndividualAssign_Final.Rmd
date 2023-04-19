@@ -1,0 +1,301 @@
+---
+title: "MVA"
+author: "Kireeti Mantrala"
+netid: "sm2594@scarletmail.rutgers.edu"
+output: html_document
+date: "2023-04-17"
+---
+
+```{r}
+library(readr)
+library(MVA)
+library(HSAUR2)
+library(GGally)
+library(ggplot2)
+library(ggridges)
+library(ggvis)
+library(factoextra)
+library(SciViews)
+library(scatterplot3d)
+library(car)
+library(lattice)
+library(FactoMineR)
+library(ggfortify)
+library(psych)
+library(ggthemes)
+library(cowplot)
+library(gapminder)
+library(gganimate)
+library(dplyr)
+library(tidyverse)
+library(grid)
+library(gridExtra)
+library(RColorBrewer)
+library(Hotelling)
+library(stats)
+library(biotools)
+library(corrplot)
+library(readr)
+library(NbClust)
+library(cluster)
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(klaR)
+
+expect<-data.table::fread("~/Downloads/life1.csv")
+head(expect)
+
+sapply(expect, function(x) sum(is.na(x)))
+expect <- expect[complete.cases(expect),] 
+sapply(expect, function(x) sum(is.na(x)))
+dim(expect)
+attach(expect)
+#Get the Correlations between the measurements
+cor(expect[,5:14])
+# Using prcomp to compute the principal components (eigenvalues and eigenvectors).Vriable means are set to zero, and the variances set to one
+expect_pca <- prcomp(expect[,5:14],scale=TRUE)
+expect_pca
+summary(expect_pca)
+
+(eigen_expect <- expect_pca$sdev^2)
+
+names(eigen_expect) <- paste("PC",1:10,sep="")
+eigen_expect
+
+sumlambdas <- sum(eigen_expect)
+sumlambdas
+
+propvar <- eigen_expect/sumlambdas
+propvar # shows the percent variance each variable PC1, PC2...PC5 holds
+
+cumvar_expect <- cumsum(propvar)
+cumvar_expect
+
+matlambdas <- rbind(eigen_expect,propvar,cumvar_expect)
+rownames(matlambdas) <- c("Eigenvalues","Prop. variance","Cum. prop. variance")
+round(matlambdas,4)
+
+summary(expect_pca)
+expect_pca$rotation
+print(expect_pca)
+# Sample scores stored in expect_pca$x
+expect_pca$x
+# Identifying the scores by their status of the country
+expecttyp_pca <- cbind(data.frame(expect$Status),expect_pca$x)
+expecttyp_pca
+# Means of scores for all the PC's classified by Status
+
+tabmeansPC <- aggregate(expecttyp_pca[,2:11],by=list(Status=expect$Status),mean)
+tabmeansPC
+
+tabmeansPC <- tabmeansPC[rev(order(tabmeansPC$Status)),]
+tabmeansPC
+
+tabfmeans <- t(tabmeansPC[-1])
+tabfmeans
+```
+
+
+```{r}
+# Standard deviations of scores for all the PC's classified by Status Of the country
+tabsdsPC <- aggregate(expecttyp_pca[,2:11],by=list(Status=expect$Status),sd)
+tabfsds <- t(tabsdsPC[,-1])
+
+t.test(PC1~expect$Status,data=expecttyp_pca)
+t.test(PC2~expect$Status,data=expecttyp_pca)
+t.test(PC3~expect$Status,data=expecttyp_pca)
+t.test(PC4~expect$Status,data=expecttyp_pca)
+t.test(PC5~expect$Status,data=expecttyp_pca)
+t.test(PC6~expect$Status,data=expecttyp_pca)
+t.test(PC7~expect$Status,data=expecttyp_pca)
+t.test(PC8~expect$Status,data=expecttyp_pca)
+t.test(PC9~expect$Status,data=expecttyp_pca)
+t.test(PC10~expect$Status,data=expecttyp_pca)
+
+# F ratio tests
+var.test(PC1~expect$Status,data=expecttyp_pca)
+var.test(PC2~expect$Status,data=expecttyp_pca)
+var.test(PC3~expect$Status,data=expecttyp_pca)
+var.test(PC4~expect$Status,data=expecttyp_pca)
+var.test(PC5~expect$Status,data=expecttyp_pca)
+var.test(PC6~expect$Status,data=expecttyp_pca)
+var.test(PC7~expect$Status,data=expecttyp_pca)
+var.test(PC8~expect$Status,data=expecttyp_pca)
+var.test(PC9~expect$Status,data=expecttyp_pca)
+var.test(PC10~expect$Status,data=expecttyp_pca)
+```
+
+
+```{r}
+# Plotting the scores for the first and second components
+plot(expecttyp_pca$PC1, expecttyp_pca$PC2,pch=ifelse(expecttyp_pca$Status == "Developed",2,16),xlab="PC1", ylab="PC2", main="1649 against values for PC1 & PC2")
+abline(h=0)
+abline(v=0)
+legend("bottomleft", legend=c("Developed","Developing"), pch=c(1,16))
+plot(eigen_expect, xlab = "Component number", ylab = "Component variance", type = "l", main = "Scree diagram")
+plot(log(eigen_expect), xlab = "Component number",ylab = "log(Component variance)", type="l",main = "Log(eigenvalue) diagram")
+print(summary(expect_pca))
+
+diag(cov(expect_pca$x))
+xlim <- range(expect_pca$x[,1])
+expect_pca$x[,1]
+expect_pca$x
+plot(expect_pca$x,xlim=xlim,ylim=xlim)
+expect_pca$rotation[,1]
+expect_pca$rotation
+
+#plot(expect[,-1])
+expect_pca$x
+plot(expect_pca)
+
+```
+
+
+```{r}
+#Cluster Analysis
+
+sapply(expect, function(x) sum(is.na(x)))
+expect <- expect[complete.cases(expect),] 
+## for removing the ones which has null values
+
+sapply(expect, function(x) sum(is.na(x)))
+expect_x <- subset.data.frame(expect, Year == "2003")
+expect_y <- expect_x[4:13,5:14]
+
+colnames(expect_y) <- rownames(expect_y)
+dist.expect <- as.dist(expect_y)
+dist.expect
+
+#Single 
+expect_single <- hclust(dist.expect,method = "single")
+plot(expect_single,hang=-1,xlab="Object",ylab="Distance",
+     main="Dendogram - Nearest neighbour linkage")
+
+#Default - Complete
+
+expect_complete <- hclust(dist.expect)
+plot(expect_complete,hang=-1,xlab="Object",ylab="Distance",
+     main="Dendogram - Farthest neighbour linkage")
+
+#Average 
+expect_average <- hclust(dist.expect,method = "average")
+plot(expect_average,hang=-1,xlab="Object",ylab="Distance",
+     main="Dendogram - Group average linkage")
+
+#Hierarchial Clustering
+#Creating Euclidean distance matrix of the standardized data.
+expect.can <- scale(expect_y)
+expect.euclidean <- dist(expect.can,method = "euclidean")
+
+#Invoking hclust command (cluster analysis by single linkage method)
+expect_hclust <- hclust(expect.euclidean,method="single")
+
+#Plotting vertical dendogram
+plot(as.dendrogram(expect_hclust),ylab="Distance Calculation",
+     ylim= c(0,8),main="Vertical Dendogram")
+
+#Plotting Horizontal Dendogram
+plot(as.dendrogram(expect_hclust),ylab="Distance Calculation",
+     ylim= c(0,8),main="Horizontal Dendogram")
+
+plot(as.dendrogram(expect_hclust),xlab="Distance Calculation",
+     xlim= c(8,0),horiz = TRUE,main="Horizontal Dendogram")
+
+```
+
+
+```{r}
+#K-Means Clustering
+
+attach(expect_y)
+# Standardizing the data with scale()
+matstd.employ <- scale(expect_y)
+# K-means, k=2, 3, 4, 5, 6
+# Centers (k's) are numbers thus, 10 random sets are chosen
+(kmeans2.expect <- kmeans(expect_y,2,nstart = 1))
+# Computing the percentage of variation accounted for. Two clusters
+perc.var.2 <- round(100*(1 - kmeans2.expect$betweenss/kmeans2.expect$totss),1)
+names(perc.var.2) <- "Perc. 2 clus"
+perc.var.2
+
+# Computing the percentage of variation accounted for. Three clusters
+(kmeans3.expect <- kmeans(expect_y,3,nstart = 1))
+perc.var.3 <- round(100*(1 - kmeans3.expect$betweenss/kmeans3.expect$totss),1)
+names(perc.var.3) <- "Perc. 3 clus"
+perc.var.3
+
+detach(expect)
+```
+
+
+```{r}
+#Factor Analysis
+
+# Computing Correlation Matrix
+corrm.expect <- cor(expect[,5:22])
+corrm.expect
+plot(corrm.expect)
+expect_pca <- prcomp(expect[,5:22], scale=TRUE)
+summary(expect_pca)
+plot(expect_pca)
+
+# A table containing eigenvalues and %'s accounted, follows. Eigenvalues are the sdev^2
+(eigen_expect <- round(expect_pca$sdev^2,2))
+names(eigen_expect) <- paste("PC",1:18,sep="")
+eigen_expect
+sumlambdas <- sum(eigen_expect)
+sumlambdas
+cumvar_expect <- cumsum(propvar)
+propvar <- round(eigen_expect/sumlambdas,2)
+propvar
+cumvar_expect <- cumsum(propvar)
+cumvar_expect
+matlambdas <- rbind(eigen_expect,propvar,cumvar_expect)
+matlambdas
+rownames(matlambdas) <- c("Eigenvalues","Prop. variance","Cum. prop. variance")
+rownames(matlambdas)
+eigvec.expect <- expect_pca$rotation
+print(expect_pca)
+# Taking the first four PCs to generate linear combinations for all the variables with four factors
+pcafactors.expect <- eigvec.expect[,1:8]
+pcafactors.expect
+# Multiplying each column of the eigenvector’s matrix by the square-root of the corresponding eigenvalue in order to get the factor loadings
+unrot.fact.expect <- sweep(pcafactors.expect,MARGIN=2,expect_pca$sdev[1:8],`*`)
+unrot.fact.expect
+
+# Computing communalities
+communalities.expect <- rowSums(unrot.fact.expect^2)
+communalities.expect
+# Performing the varimax rotation. The default in the varimax function is norm=TRUE thus, Kaiser normalization is carried out
+rot.fact.expect <- varimax(unrot.fact.expect)
+View(unrot.fact.expect)
+rot.fact.expect
+# The print method of varimax omits loadings less than abs(0.1). In order to display all the loadings, it is necessary to ask explicitly the contents of the object $loadings
+fact.load.expect <- rot.fact.expect$loadings[,1:8]
+fact.load.expect
+# Computing the rotated factor scores for the 30 European Countries. Notice that signs are reversed for factors F2 (PC2), F3 (PC3) and F4 (PC4)
+scale.expect <- scale(expect[,5:22])
+scale.expect
+as.matrix(scale.expect)%*%fact.load.expect%*%solve(t(fact.load.expect)%*%fact.load.expect)
+
+
+fit.pc <- principal(expect[,5:22], nfactors=8, rotate="varimax")
+fit.pc
+round(fit.pc$values, 3)
+fit.pc$loadings
+# Loadings with more digits
+for (i in c(1,2,3,4,5,6,7,8)) { print(fit.pc$loadings[[1,i]])}
+# Communalities
+fit.pc$communality
+# Rotated factor scores, Notice the columns ordering: RC1, RC3, RC2 and RC4
+fit.pc$scores
+
+fa.parallel(expect[,5:22]) 
+fa.plot(fit.pc) 
+fa.diagram(fit.pc)
+vss(expect[,5:22])
+
+```
+
